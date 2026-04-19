@@ -1,0 +1,34 @@
+name: Build Field Equip Mod
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
+
+    - name: Restore Dependencies
+      run: dotnet restore FieldEquipMod.csproj
+
+    - name: Build Mod
+      run: dotnet build FieldEquipMod.csproj --configuration Release
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: FieldEquipMod-DLL
+        path: bin/Release/net472/FieldEquipMod.dll
+        
