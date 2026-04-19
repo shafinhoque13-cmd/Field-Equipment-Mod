@@ -4,7 +4,7 @@ using System;
 
 namespace FieldEquipmentMod
 {
-    [BepInPlugin("com.shafin.fieldequip", "Field Equipment Unlocker", "1.0.0")]
+    [BepInPlugin("com.shafin.fieldequip", "Ultimate Field Unlocker", "1.2.0")]
     public class Plugin : BaseUnityPlugin
     {
         private bool _active = true;
@@ -13,9 +13,8 @@ namespace FieldEquipmentMod
         void OnGUI()
         {
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(Screen.width / 1920f, Screen.height / 1080f, 1));
-            
-            string status = _active ? "<color=green>BENCH BYPASS: ACTIVE</color>" : "<color=red>BENCH BYPASS: OFF</color>";
-            if (GUI.Button(new Rect(50, 50, 350, 90), $"<size=28>{status}</size>"))
+            string status = _active ? "<color=cyan>BYPASS: ACTIVE</color>" : "<color=red>BYPASS: OFF</color>";
+            if (GUI.Button(new Rect(50, 50, 380, 100), $"<size=30>{status}</size>"))
             {
                 _active = !_active;
             }
@@ -26,23 +25,16 @@ namespace FieldEquipmentMod
             if (!_active) return;
 
             _timer += Time.deltaTime;
-            if (_timer >= 1.0f) // Check every second
+            if (_timer >= 0.4f) // Fast pulse to keep skills unlocked
             {
-                UnlockEquipment();
+                UnlockEverything();
                 _timer = 0;
             }
         }
 
-        private void UnlockEquipment()
+        private void UnlockEverything()
         {
-            // Forces the Player State to 'Resting' so menus work anywhere
-            GameObject hero = GameObject.FindGameObjectWithTag("Player");
-            if (hero != null)
-            {
-                hero.SendMessage("SetAtBench", true, SendMessageOptions.DontRequireReceiver);
-            }
-
-            // Forces Global Variables to allow equipping
+            // 1. Force Player Data
             GameObject pd = GameObject.Find("PlayerData");
             if (pd != null)
             {
@@ -50,13 +42,36 @@ namespace FieldEquipmentMod
                 pd.SendMessage("SetBool", new object[] { "canEquip", true }, SendMessageOptions.DontRequireReceiver);
             }
 
-            // Target the Inventory UI directly
-            GameObject[] uiElements = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
-            foreach (var ui in uiElements)
+            // 2. Force Hero Controller to stay in 'Rest' mode
+            GameObject hero = GameObject.FindGameObjectWithTag("Player");
+            if (hero != null)
             {
-                if (ui != null && (ui.name.Contains("Inventory") || ui.name.Contains("Crest")))
+                hero.SendMessage("SetAtBench", true, SendMessageOptions.DontRequireReceiver);
+            }
+
+            // 3. TARGET THE UI BUTTONS (Silk Skills, Tools, Crests)
+            GameObject[] allUI = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+            foreach (var ui in allUI)
+            {
+                if (ui == null) continue;
+                string n = ui.name.ToLower();
+
+                // Target Silk Skill Slots specifically
+                if (n.Contains("skill") || n.Contains("crest") || n.Contains("tool") || n.Contains("slot") || n.Contains("pane"))
                 {
+                    // Force PlayMaker FSM to the 'Equip' state
                     ui.SendMessage("SetCanEquip", true, SendMessageOptions.DontRequireReceiver);
+                    ui.SendMessage("SendEvent", "BENCH ON", SendMessageOptions.DontRequireReceiver);
+                    ui.SendMessage("SendEvent", "EQUIP_READY", SendMessageOptions.DontRequireReceiver);
+
+                    // Force the button to be bright and clickable
+                    var group = ui.GetComponent<CanvasGroup>();
+                    if (group != null)
+                    {
+                        group.interactable = true;
+                        group.blocksRaycasts = true;
+                        group.alpha = 1f;
+                    }
                 }
             }
         }
