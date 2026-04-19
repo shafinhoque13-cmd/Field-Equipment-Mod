@@ -4,7 +4,7 @@ using System;
 
 namespace FieldEquipmentMod
 {
-    [BepInPlugin("com.shafin.fieldequip", "Ultimate Field Unlocker", "1.4.0")]
+    [BepInPlugin("com.shafin.fieldequip", "Ultimate Field Unlocker", "1.6.0")]
     public class Plugin : BaseUnityPlugin
     {
         private bool _active = true;
@@ -13,7 +13,8 @@ namespace FieldEquipmentMod
         {
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(Screen.width / 1920f, Screen.height / 1080f, 1));
             
-            if (GUI.Button(new Rect(50, 50, 380, 100), _active ? "<color=cyan>BYPASS: ACTIVE</color>" : "<color=red>BYPASS: OFF</color>"))
+            string label = _active ? "<color=cyan>BYPASS: ON</color>" : "<color=red>BYPASS: OFF</color>";
+            if (GUI.Button(new Rect(50, 50, 380, 100), $"<size=30>{label}</size>"))
             {
                 _active = !_active;
             }
@@ -23,42 +24,46 @@ namespace FieldEquipmentMod
         {
             if (!_active) return;
 
-            // Target the core game systems every frame to maintain the 'lie'
+            // 1. Force the 'Memory' of the save file
             GameObject pd = GameObject.Find("PlayerData");
-            GameObject hero = GameObject.FindGameObjectWithTag("Player");
-
             if (pd != null)
             {
                 pd.SendMessage("SetBool", new object[] { "atBench", true }, SendMessageOptions.DontRequireReceiver);
                 pd.SendMessage("SetBool", new object[] { "canEquip", true }, SendMessageOptions.DontRequireReceiver);
             }
 
+            // 2. Force the Player's physical state
+            GameObject hero = GameObject.FindGameObjectWithTag("Player");
             if (hero != null)
             {
-                // This mimics the PC mod's patch by forcing the hero's state
                 hero.SendMessage("SetAtBench", true, SendMessageOptions.DontRequireReceiver);
             }
 
-            // Target the specific UI logic components
-            GameObject[] menus = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
-            foreach (var m in menus)
+            // 3. THE UI FIX: Brute force the buttons
+            // This targets the "Dark/Grey" look from your screenshots
+            GameObject[] allUI = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+            foreach (var ui in allUI)
             {
-                if (m == null) continue;
-                string name = m.name;
+                if (ui == null) continue;
+                string name = ui.name.ToLower();
 
-                // Silk Skills, Crests, and Tools all share these internal keywords
-                if (name.Contains("Inventory") || name.Contains("Skill") || name.Contains("Crest") || name.Contains("Tool"))
+                // Target Silk Skills, Crests, Tools, and the Equip Slots
+                if (name.Contains("skill") || name.Contains("crest") || name.Contains("tool") || name.Contains("slot") || name.Contains("equip"))
                 {
-                    // Force the FSM variables directly
-                    m.SendMessage("SetCanEquip", true, SendMessageOptions.DontRequireReceiver);
-                    
-                    // Force a UI redraw (The PC mod does this via Harmony)
-                    m.SendMessage("UpdateStatus", SendMessageOptions.DontRequireReceiver);
-                    m.SendMessage("SendEvent", "BENCH ON", SendMessageOptions.DontRequireReceiver);
-                    
-                    // Unblock the Button's visual lock
-                    CanvasGroup cg = m.GetComponent<CanvasGroup>();
-                    if (cg != null) { cg.interactable = true; cg.alpha = 1f; }
+                    // Force Visuals (Makes them bright/visible)
+                    CanvasGroup cg = ui.GetComponent<CanvasGroup>();
+                    if (cg != null)
+                    {
+                        cg.interactable = true;
+                        cg.blocksRaycasts = true;
+                        cg.alpha = 1f;
+                    }
+
+                    // Force Logic (Tricks the PlayMaker FSM)
+                    ui.SendMessage("SetCanEquip", true, SendMessageOptions.DontRequireReceiver);
+                    ui.SendMessage("SendEvent", "BENCH ON", SendMessageOptions.DontRequireReceiver);
+                    ui.SendMessage("SendEvent", "ACTIVATE", SendMessageOptions.DontRequireReceiver);
+                    ui.SendMessage("SendEvent", "READY", SendMessageOptions.DontRequireReceiver);
                 }
             }
         }
