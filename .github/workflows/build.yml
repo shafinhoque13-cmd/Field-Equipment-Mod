@@ -19,7 +19,6 @@ jobs:
         dotnet-version: 6.0.x
 
     - name: Build Mod
-      # No restore needed since we use local libs
       run: dotnet build FieldEquipMod.csproj --configuration Release
 
     - name: Upload Artifact
