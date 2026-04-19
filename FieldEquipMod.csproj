@@ -2,9 +2,8 @@
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
     <AssemblyName>FieldEquipMod</AssemblyName>
-    <Version>1.6.0</Version>
+    <Version>1.7.0</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,7 +13,6 @@
     <Reference Include="UnityEngine.IMGUIModule"><HintPath>libs\UnityEngine.IMGUIModule.dll</HintPath></Reference>
     <Reference Include="UnityEngine.UIModule"><HintPath>libs\UnityEngine.UIModule.dll</HintPath></Reference>
     <Reference Include="UnityEngine.Physics2DModule"><HintPath>libs\UnityEngine.Physics2DModule.dll</HintPath></Reference>
-    <Reference Include="UnityEngine.InputLegacyModule"><HintPath>libs\UnityEngine.InputLegacyModule.dll</HintPath></Reference>
-    <Reference Include="UnityEngine.UIElementsModule"><HintPath>libs\UnityEngine.UIElementsModule.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.AssetBundleModule"><HintPath>libs\UnityEngine.AssetBundleModule.dll</HintPath></Reference>
   </ItemGroup>
 </Project>
