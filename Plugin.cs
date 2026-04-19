@@ -4,7 +4,7 @@ using System;
 
 namespace FieldEquipmentMod
 {
-    [BepInPlugin("com.shafin.fieldequip", "Ultimate Field Unlocker", "1.6.0")]
+    [BepInPlugin("com.shafin.fieldequip", "Ultimate Field Unlocker", "1.7.0")]
     public class Plugin : BaseUnityPlugin
     {
         private bool _active = true;
@@ -13,10 +13,11 @@ namespace FieldEquipmentMod
         {
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(Screen.width / 1920f, Screen.height / 1080f, 1));
             
-            string label = _active ? "<color=cyan>BYPASS: ON</color>" : "<color=red>BYPASS: OFF</color>";
-            if (GUI.Button(new Rect(50, 50, 380, 100), $"<size=30>{label}</size>"))
+            string status = _active ? "<color=cyan>BYPASS: ACTIVE</color>" : "<color=red>BYPASS: OFF</color>";
+            if (GUI.Button(new Rect(50, 50, 400, 110), $"<size=28>{status}</size>"))
             {
                 _active = !_active;
+                if (_active) ForceUIRefresh(); // Jolt the UI when turned on
             }
         }
 
@@ -24,46 +25,34 @@ namespace FieldEquipmentMod
         {
             if (!_active) return;
 
-            // 1. Force the 'Memory' of the save file
+            // Constantly feed 'True' to the underlying logic
             GameObject pd = GameObject.Find("PlayerData");
-            if (pd != null)
-            {
+            if (pd != null) {
                 pd.SendMessage("SetBool", new object[] { "atBench", true }, SendMessageOptions.DontRequireReceiver);
                 pd.SendMessage("SetBool", new object[] { "canEquip", true }, SendMessageOptions.DontRequireReceiver);
             }
+        }
 
-            // 2. Force the Player's physical state
-            GameObject hero = GameObject.FindGameObjectWithTag("Player");
-            if (hero != null)
+        private void ForceUIRefresh()
+        {
+            GameObject[] all = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+            foreach (var obj in all)
             {
-                hero.SendMessage("SetAtBench", true, SendMessageOptions.DontRequireReceiver);
-            }
+                if (obj == null) continue;
+                string n = obj.name.ToLower();
 
-            // 3. THE UI FIX: Brute force the buttons
-            // This targets the "Dark/Grey" look from your screenshots
-            GameObject[] allUI = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
-            foreach (var ui in allUI)
-            {
-                if (ui == null) continue;
-                string name = ui.name.ToLower();
-
-                // Target Silk Skills, Crests, Tools, and the Equip Slots
-                if (name.Contains("skill") || name.Contains("crest") || name.Contains("tool") || name.Contains("slot") || name.Contains("equip"))
+                // Target the specific modules for Silk Skills, Tools, and Crests
+                if (n.Contains("inventory") || n.Contains("skill") || n.Contains("crest") || n.Contains("tool") || n.Contains("slot"))
                 {
-                    // Force Visuals (Makes them bright/visible)
-                    CanvasGroup cg = ui.GetComponent<CanvasGroup>();
-                    if (cg != null)
-                    {
-                        cg.interactable = true;
-                        cg.blocksRaycasts = true;
-                        cg.alpha = 1f;
-                    }
+                    // 1. Force visual transparency (Remove the grey)
+                    CanvasGroup cg = obj.GetComponent<CanvasGroup>();
+                    if (cg != null) { cg.interactable = true; cg.alpha = 1f; }
 
-                    // Force Logic (Tricks the PlayMaker FSM)
-                    ui.SendMessage("SetCanEquip", true, SendMessageOptions.DontRequireReceiver);
-                    ui.SendMessage("SendEvent", "BENCH ON", SendMessageOptions.DontRequireReceiver);
-                    ui.SendMessage("SendEvent", "ACTIVATE", SendMessageOptions.DontRequireReceiver);
-                    ui.SendMessage("SendEvent", "READY", SendMessageOptions.DontRequireReceiver);
+                    // 2. The 'Jolt' - We send the same events the PC mod uses
+                    obj.SendMessage("SetCanEquip", true, SendMessageOptions.DontRequireReceiver);
+                    obj.SendMessage("UpdateStatus", SendMessageOptions.DontRequireReceiver);
+                    obj.SendMessage("SendEvent", "BENCH ON", SendMessageOptions.DontRequireReceiver);
+                    obj.SendMessage("SendEvent", "RECHECK", SendMessageOptions.DontRequireReceiver);
                 }
             }
         }
