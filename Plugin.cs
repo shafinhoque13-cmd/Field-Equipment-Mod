@@ -1,78 +1,64 @@
 using BepInEx;
 using UnityEngine;
 using System;
-using System.Reflection;
 
 namespace FieldEquipmentMod
 {
     [BepInPlugin("com.shafin.fieldequip", "Field Equipment Unlocker", "1.0.0")]
     public class Plugin : BaseUnityPlugin
     {
-        private bool _modEnabled = true;
-        private float _checkTimer = 0f;
-
-        // UI Scaling for Mobile
-        private Rect _btnRect = new Rect(50, 50, 300, 90);
+        private bool _active = true;
+        private float _timer = 0f;
 
         void OnGUI()
         {
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(Screen.width / 1920f, Screen.height / 1080f, 1));
-
-            string btnText = _modEnabled ? "<color=green>BENCH BYPASS: ON</color>" : "<color=red>BENCH BYPASS: OFF</color>";
-            if (GUI.Button(_btnRect, $"<size=30>{btnText}</size>"))
+            
+            string status = _active ? "<color=green>BENCH BYPASS: ACTIVE</color>" : "<color=red>BENCH BYPASS: OFF</color>";
+            if (GUI.Button(new Rect(50, 50, 350, 90), $"<size=28>{status}</size>"))
             {
-                _modEnabled = !_modEnabled;
+                _active = !_active;
             }
         }
 
         void Update()
         {
-            if (!_modEnabled) return;
+            if (!_active) return;
 
-            _checkTimer += Time.deltaTime;
-            if (_checkTimer >= 0.5f) // Run every half second to keep the "lie" alive
+            _timer += Time.deltaTime;
+            if (_timer >= 1.0f) // Check every second
             {
-                ForceEquipmentStates();
-                _checkTimer = 0;
+                UnlockEquipment();
+                _timer = 0;
             }
         }
 
-        private void ForceEquipmentStates()
+        private void UnlockEquipment()
         {
-            // 1. Trick the PlayerData
-            // This is where the game checks "atBench" before showing the 'Equip' button
-            GameObject pdObj = GameObject.Find("PlayerData");
-            if (pdObj != null)
-            {
-                // We send a direct message to set the boolean variable
-                pdObj.SendMessage("SetBool", new object[] { "atBench", true }, SendMessageOptions.DontRequireReceiver);
-                pdObj.SendMessage("SetBool", new object[] { "canEquip", true }, SendMessageOptions.DontRequireReceiver);
-            }
-
-            // 2. Trick the HeroController
-            // This prevents the game from kicking you out of the menu when you move
+            // Forces the Player State to 'Resting' so menus work anywhere
             GameObject hero = GameObject.FindGameObjectWithTag("Player");
             if (hero != null)
             {
                 hero.SendMessage("SetAtBench", true, SendMessageOptions.DontRequireReceiver);
             }
 
-            // 3. Force the Inventory UI to wake up
-            // This targets the specific "Crest" and "Tool" menu buttons
-            GameObject[] menus = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
-            foreach (var menu in menus)
+            // Forces Global Variables to allow equipping
+            GameObject pd = GameObject.Find("PlayerData");
+            if (pd != null)
             {
-                if (menu == null) continue;
-                string n = menu.name.ToLower();
-                
-                if (n.Contains("inventory") || n.Contains("equipment") || n.Contains("crest"))
+                pd.SendMessage("SetBool", new object[] { "atBench", true }, SendMessageOptions.DontRequireReceiver);
+                pd.SendMessage("SetBool", new object[] { "canEquip", true }, SendMessageOptions.DontRequireReceiver);
+            }
+
+            // Target the Inventory UI directly
+            GameObject[] uiElements = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+            foreach (var ui in uiElements)
+            {
+                if (ui != null && (ui.name.Contains("Inventory") || ui.name.Contains("Crest")))
                 {
-                    // Forces the FSM (PlayMaker) inside the menu to unlock the slots
-                    menu.SendMessage("SetCanEquip", true, SendMessageOptions.DontRequireReceiver);
-                    menu.SendMessage("UpdateStatus", SendMessageOptions.DontRequireReceiver);
+                    ui.SendMessage("SetCanEquip", true, SendMessageOptions.DontRequireReceiver);
                 }
             }
         }
     }
 }
-
