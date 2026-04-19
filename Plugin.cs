@@ -13,6 +13,7 @@ namespace FieldEquipmentMod
         void OnGUI()
         {
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(Screen.width / 1920f, Screen.height / 1080f, 1));
+            
             string status = _active ? "<color=cyan>BYPASS: ACTIVE</color>" : "<color=red>BYPASS: OFF</color>";
             if (GUI.Button(new Rect(50, 50, 380, 100), $"<size=30>{status}</size>"))
             {
@@ -25,7 +26,7 @@ namespace FieldEquipmentMod
             if (!_active) return;
 
             _timer += Time.deltaTime;
-            if (_timer >= 0.4f) // Fast pulse to keep skills unlocked
+            if (_timer >= 0.4f) 
             {
                 UnlockEverything();
                 _timer = 0;
@@ -34,7 +35,7 @@ namespace FieldEquipmentMod
 
         private void UnlockEverything()
         {
-            // 1. Force Player Data
+            // 1. Force PlayerData (The Logic Layer)
             GameObject pd = GameObject.Find("PlayerData");
             if (pd != null)
             {
@@ -42,29 +43,28 @@ namespace FieldEquipmentMod
                 pd.SendMessage("SetBool", new object[] { "canEquip", true }, SendMessageOptions.DontRequireReceiver);
             }
 
-            // 2. Force Hero Controller to stay in 'Rest' mode
+            // 2. Force HeroController (The Physics/Character Layer)
             GameObject hero = GameObject.FindGameObjectWithTag("Player");
             if (hero != null)
             {
                 hero.SendMessage("SetAtBench", true, SendMessageOptions.DontRequireReceiver);
+                hero.SendMessage("SetCanEquip", true, SendMessageOptions.DontRequireReceiver);
             }
 
-            // 3. TARGET THE UI BUTTONS (Silk Skills, Tools, Crests)
-            GameObject[] allUI = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
-            foreach (var ui in allUI)
+            // 3. Force UI Buttons (Crests, Tools, and Silk Skills)
+            GameObject[] uiObjects = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
+            foreach (var ui in uiObjects)
             {
                 if (ui == null) continue;
                 string n = ui.name.ToLower();
 
-                // Target Silk Skill Slots specifically
-                if (n.Contains("skill") || n.Contains("crest") || n.Contains("tool") || n.Contains("slot") || n.Contains("pane"))
+                if (n.Contains("skill") || n.Contains("crest") || n.Contains("tool") || n.Contains("slot"))
                 {
-                    // Force PlayMaker FSM to the 'Equip' state
+                    // Wake up PlayMaker FSMs
                     ui.SendMessage("SetCanEquip", true, SendMessageOptions.DontRequireReceiver);
                     ui.SendMessage("SendEvent", "BENCH ON", SendMessageOptions.DontRequireReceiver);
-                    ui.SendMessage("SendEvent", "EQUIP_READY", SendMessageOptions.DontRequireReceiver);
-
-                    // Force the button to be bright and clickable
+                    
+                    // Force Visual Interactivity
                     var group = ui.GetComponent<CanvasGroup>();
                     if (group != null)
                     {
