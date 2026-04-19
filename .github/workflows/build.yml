@@ -3,8 +3,6 @@ name: Build Field Equip Mod
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -13,21 +11,19 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v4 # Updated to v4
+      uses: actions/checkout@v4
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4 # Updated to v4
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 6.0.x
 
-    - name: Restore Dependencies
-      run: dotnet restore FieldEquipMod.csproj
-
     - name: Build Mod
+      # No restore needed since we use local libs
       run: dotnet build FieldEquipMod.csproj --configuration Release
 
     - name: Upload Artifact
-      uses: actions/upload-artifact@v4 # FIXED: Now using v4
+      uses: actions/upload-artifact@v4
       with:
         name: FieldEquipMod-DLL
         path: bin/Release/net472/FieldEquipMod.dll
