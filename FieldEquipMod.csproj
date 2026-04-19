@@ -3,32 +3,19 @@
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
     <AssemblyName>FieldEquipMod</AssemblyName>
-    <Version>1.2.0</Version>
+    <Version>1.4.0</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="BepInEx">
-      <HintPath>libs\BepInEx.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine">
-      <HintPath>libs\UnityEngine.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.CoreModule">
-      <HintPath>libs\UnityEngine.CoreModule.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.IMGUIModule">
-      <HintPath>libs\UnityEngine.IMGUIModule.dll</HintPath>
-    </Reference>
-    
-    <Reference Include="UnityEngine.UIModule">
-      <HintPath>libs\UnityEngine.UIModule.dll</HintPath>
-    </Reference>
-
-    <Reference Include="UnityEngine.Physics2DModule">
-      <HintPath>libs\UnityEngine.Physics2DModule.dll</HintPath>
-    </Reference>
+    <Reference Include="BepInEx"><HintPath>libs\BepInEx.dll</HintPath></Reference>
+    <Reference Include="UnityEngine"><HintPath>libs\UnityEngine.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.CoreModule"><HintPath>libs\UnityEngine.CoreModule.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.IMGUIModule"><HintPath>libs\UnityEngine.IMGUIModule.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.UIModule"><HintPath>libs\UnityEngine.UIModule.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.Physics2DModule"><HintPath>libs\UnityEngine.Physics2DModule.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.InputLegacyModule"><HintPath>libs\UnityEngine.InputLegacyModule.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.UIElementsModule"><HintPath>libs\UnityEngine.UIElementsModule.dll</HintPath></Reference>
   </ItemGroup>
 
 </Project>
